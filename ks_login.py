@@ -49,7 +49,7 @@ try:
 except Exception as e:
         print("Exception when calling SessionApi->session_2fa: %s\n" % e)
 
-logout_response = client.logout()
+logout_response = app_access_token_response.logout()
 print("---------------logout response---------------")
 print(logout_response)
 print("---------------End of logout response---------------")
