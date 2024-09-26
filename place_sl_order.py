@@ -15,15 +15,15 @@ place_order_details = {
     "dq": "0",  # Disclosed quantity
     "es": "nse_cm",  # Exchange segment
     "mp": "0",  # Market Protection
-    "pc": "MIS",  # Product code
+    "pc": "CNC",  # Product code
     "pf": "N",  # PosSqrFlg
     "pr": "0",  # Price
-    "pt": "MKT",  # Order Type
+    "pt": "SL-M",  # Order Type
     "qt": "1",  # Quantity
     "rt": "DAY",  # Order Duration
-    "tp": "0",  # Trigger price
+    "tp": "10.36",  # Trigger price
     "ts": "IDEA-EQ",  # Trading Symbol
-    "tt": "B"  # Transaction Type
+    "tt": "S"  # Transaction Type
 }
 
 # Convert the order details to a URL-encoded string

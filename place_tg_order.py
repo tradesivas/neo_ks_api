@@ -17,12 +17,12 @@ place_order_details = {
     "mp": "0",  # Market Protection
     "pc": "MIS",  # Product code
     "pf": "N",  # PosSqrFlg
-    "pr": "0",  # Price
-    "pt": "MKT",  # Order Type
+    "pr": "132.40",  # Price
+    "pt": "L",  # Order Type
     "qt": "1",  # Quantity
     "rt": "DAY",  # Order Duration
     "tp": "0",  # Trigger price
-    "ts": "IDEA-EQ",  # Trading Symbol
+    "ts": "SAIL-EQ",  # Trading Symbol
     "tt": "B"  # Transaction Type
 }
 
