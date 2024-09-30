@@ -15,14 +15,14 @@ place_order_details = {
     "dq": "0",  # Disclosed quantity
     "es": "nse_cm",  # Exchange segment
     "mp": "0",  # Market Protection
-    "pc": "CNC",  # Product code
+    "pc": "MIS",  # Product code
     "pf": "N",  # PosSqrFlg
     "pr": "0",  # Price
     "pt": "SL-M",  # Order Type
-    "qt": "1",  # Quantity
+    "qt": "2",  # Quantity
     "rt": "DAY",  # Order Duration
-    "tp": "10.36",  # Trigger price
-    "ts": "IDEA-EQ",  # Trading Symbol
+    "tp": "1112.85",  # Trigger price
+    "ts": "SUDARSCHEM-EQ",  # Trading Symbol
     "tt": "S"  # Transaction Type
 }
 
