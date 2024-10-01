@@ -19,11 +19,11 @@ place_order_details = {
     "pf": "N",  # PosSqrFlg
     "pr": "0",  # Price
     "pt": "SL-M",  # Order Type
-    "qt": "2",  # Quantity
+    "qt": "1",  # Quantity
     "rt": "DAY",  # Order Duration
-    "tp": "1112.85",  # Trigger price
-    "ts": "SUDARSCHEM-EQ",  # Trading Symbol
-    "tt": "S"  # Transaction Type
+    "tp": "94.45",  # Trigger price
+    "ts": "GMRINFRA-EQ",  # Trading Symbol
+    "tt": "B"  # Transaction Type
 }
 
 # Convert the order details to a URL-encoded string

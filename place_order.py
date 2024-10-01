@@ -2,12 +2,36 @@ import requests
 import os
 from dotenv import load_dotenv
 import json
+import pandas as pd
+import tvDatafeed
+from tvDatafeed import TvDatafeed,Interval
+from datetime import date, time, datetime as dt
 
+#read scripmaster file
+nse_cm = pd.read_csv (r"scripmaster_files\nse_cm.csv",sep=",")
 # Load environment variables
 load_dotenv(override=True)
 
 # Define the endpoint and sId (server id)
 place_order_endpoint = os.getenv("place_order_endpoint") + os.getenv("server_id")
+stop_amount_per_trade = os.getenv("stop_amount_per_trade")
+symbol = input("Enter Symbol: ")
+tt = input("Buy or Sell (B/S): ")
+pTrdSymbol  = nse_cm.loc[(nse_cm['pSymbolName'] == symbol.upper()) & (nse_cm['pGroup'] == 'EQ') & (nse_cm['pExchSeg'] == 'nse_cm') & (nse_cm['pSegment'] == 'CASH'), 'pTrdSymbol'].iloc[0]
+#######        Position Sizing     #################
+todays_date = date.today()
+todays_date = date.today()
+tdate = str(todays_date.year)+'-'+str(todays_date.month)+'-'+str(todays_date.day)
+data = TvDatafeed().get_hist(symbol=symbol,exchange='NSE',interval=Interval.in_daily,n_bars=1)
+ltp= data.loc[tdate+' 09:15:00']['close']
+print(f"LTP for {pTrdSymbol}: {ltp}")
+sl = input("Enter stoploss Price: ")
+if tt == "b":
+    qty = str(int(float(stop_amount_per_trade)/(float(ltp)-float(sl))))
+elif tt == "s":
+    qty = str(int(float(stop_amount_per_trade)/(float(sl)-float(ltp))))
+
+print(f"qty = {qty}")
 
 # Define the order payload
 place_order_details = {
@@ -19,11 +43,11 @@ place_order_details = {
     "pf": "N",  # PosSqrFlg
     "pr": "0",  # Price
     "pt": "MKT",  # Order Type
-    "qt": "1",  # Quantity
+    "qt": qty,  # Quantity
     "rt": "DAY",  # Order Duration
     "tp": "0",  # Trigger price
-    "ts": "IDEA-EQ",  # Trading Symbol
-    "tt": "B"  # Transaction Type
+    "ts": pTrdSymbol,  # Trading Symbol
+    "tt": tt.upper()  # Transaction Type
 }
 
 # Convert the order details to a URL-encoded string
