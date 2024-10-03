@@ -2,12 +2,21 @@ import requests
 import os
 from dotenv import load_dotenv
 import json
+import pandas as pd
 
+nse_cm = pd.read_csv (r"scripmaster_files\nse_cm.csv",sep=",")
 # Load environment variables
 load_dotenv(override=True)
 
 # Define the endpoint and sId (server id)
 place_order_endpoint = os.getenv("place_order_endpoint") + os.getenv("server_id")
+#input
+symbol = input("Enter Symbol: ")
+tt = input("Buy or Sell (B/S): ")
+qty = input("Enter Qty: ")
+stoploss_price = input("Enter Stoploss Price: ")
+pTrdSymbol  = nse_cm.loc[(nse_cm['pSymbolName'] == symbol.upper()) & (nse_cm['pGroup'] == 'EQ') & (nse_cm['pExchSeg'] == 'nse_cm') & (nse_cm['pSegment'] == 'CASH'), 'pTrdSymbol'].iloc[0]
+
 
 # Define the order payload
 place_order_details = {
@@ -19,11 +28,11 @@ place_order_details = {
     "pf": "N",  # PosSqrFlg
     "pr": "0",  # Price
     "pt": "SL-M",  # Order Type
-    "qt": "1",  # Quantity
+    "qt": qty,  # Quantity
     "rt": "DAY",  # Order Duration
-    "tp": "94.45",  # Trigger price
-    "ts": "GMRINFRA-EQ",  # Trading Symbol
-    "tt": "B"  # Transaction Type
+    "tp": stoploss_price,  # Trigger price
+    "ts": pTrdSymbol,  # Trading Symbol
+    "tt": tt.upper()  # Transaction Type
 }
 
 # Convert the order details to a URL-encoded string
@@ -52,9 +61,9 @@ if place_order_response.status_code == 200:
     order_id = response_data.get("nOrdNo")
     
     if order_id:
-        print(f"Order placed successfully! Order ID: {order_id}")
+        print(f"Stoploss Order placed successfully! SL Order ID: {order_id}")
     else:
-        print("Order ID not found in the response.")
+        print("Stoploss Order ID not found in the response.")
 else:
-    print(f"Failed to place order. Status Code: {place_order_response.status_code}")
+    print(f"Failed to place stoploss order. Status Code: {place_order_response.status_code}")
     print(f"Response: {place_order_response.text}")
