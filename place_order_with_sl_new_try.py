@@ -1,38 +1,80 @@
-import requests
 import os
 from dotenv import load_dotenv
-import json
-import time
 import pandas as pd
-import tvDatafeed
+from datetime import date, time, datetime as dt
+#import tvDatafeed
 from tvDatafeed import TvDatafeed,Interval
-from datetime import date
+import sys
 
-# Load environment variables
+#--------------------   Load environment variables  ---------------
+
 load_dotenv(override=True)
 
-def order_history(order_id):
+#-----------------------------------------------
 
-    order_history_endpoint = os.getenv("order_history_endpoint") + os.getenv("server_id")
+# Load the scripmaster CSV file
+nse_cm = pd.read_csv (r"scripmaster_files\nse_cm.csv",sep=",")
+# Set multi-index on the columns
+nse_cm.set_index(['pSymbolName', 'pGroup', 'pExchSeg', 'pSegment'], inplace=True)
+# Take input from the user
+symbol = input("Enter Symbol: ")
+# Retrieve 'pTrdSymbol' for the given multi-index
+pTrdSymbol = nse_cm.loc[(symbol.upper(), 'EQ', 'nse_cm', 'CASH'), 'pTrdSymbol']
+print(f"Trading symbol: {pTrdSymbol}")
+
+#------------------------   Get LTP for given Symbol from TradingView   ---------------------
+
+todays_date = date.today()
+todays_date = date.today()
+tdate = str(todays_date.year)+'-'+str(todays_date.month)+'-'+str(todays_date.day)
+data = TvDatafeed().get_hist(symbol=symbol,exchange='NSE',interval=Interval.in_daily,n_bars=1)
+ltp= data.loc[tdate+' 09:15:00']['close']
+print(f"LTP for {pTrdSymbol}: {ltp}")
+
+#----------------   Buy or Sell input   --------------------------------------
+
+tt = input("Buy or Sell (B/S): ")
+sl = input("Enter stoploss Price: ")
+
+#######        Position Sizing     ########################################
+
+stop_amount_per_trade = os.getenv("stop_amount_per_trade")
+
+if tt == "b":
+    qty = str(int(float(stop_amount_per_trade)/(float(ltp)-float(sl))))
+elif tt == "s":
+    qty = str(int(float(stop_amount_per_trade)/(float(sl)-float(ltp))))
+
+print(f"qty = {qty}")
+
+############    Exit the code if qty is zero    #######################################
+
+if not qty>0:
+    print("Quantity is Zero. Exiting the code.")
+    print("-----------------------------------")
+    sys.exit()  # Exit the code if the condition is not met
+
+#-----------------------------------------------------------------------------
+import requests
+import json
+import time
+
+order_history_endpoint = os.getenv("order_history_endpoint") + os.getenv("server_id")
+place_order_endpoint = os.getenv("place_order_endpoint") + os.getenv("server_id")
+
+#-----------------------------------------------------------------------------------
+def order_history(order_id):
+    
     order_history_details = {
         "nOrdNo": order_id
         }
     order_history_payload = f"jData={requests.utils.quote(json.dumps(order_history_details))}"
-    # Set up headers
-    order_history_headers = {
-        'accept': 'application/json',
-        'Sid': os.getenv("session_id"),  # Session ID from .env
-        'Auth': os.getenv("session_token"),  # Session token from .env
-        'neo-fin-key': 'neotradeapi',  # Use appropriate key
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': f"Bearer {os.getenv('app_access_token')}"  # Access token from .env
-        }
 
     is_order_history_response = False
     while is_order_history_response == False:
         try:
             # Make the POST request to place the order
-            order_history_response = requests.post(order_history_endpoint, headers=order_history_headers, data=order_history_payload)
+            order_history_response = requests.post(order_history_endpoint, headers=headers, data=order_history_payload)
             # print(sl_cancel_order_response.text)
             if order_history_response.status_code == 200:
                 is_order_history_response = True
@@ -51,30 +93,24 @@ def order_history(order_id):
             time.sleep(5)
     return (order_status)
 
-#read scripmaster file
-nse_cm = pd.read_csv (r"scripmaster_files\nse_cm.csv",sep=",")
+#--------------------------------------------------------------------------------------
 
-# Define the endpoint and sId (server id)
-place_order_endpoint = os.getenv("place_order_endpoint") + os.getenv("server_id")
-stop_amount_per_trade = os.getenv("stop_amount_per_trade")
-symbol = input("Enter Symbol: ")
-tt = input("Buy or Sell (B/S): ")
-pTrdSymbol  = nse_cm.loc[(nse_cm['pSymbolName'] == symbol.upper()) & (nse_cm['pGroup'] == 'EQ') & (nse_cm['pExchSeg'] == 'nse_cm') & (nse_cm['pSegment'] == 'CASH'), 'pTrdSymbol'].iloc[0]
-#######        Position Sizing     #################
-todays_date = date.today()
-todays_date = date.today()
-tdate = str(todays_date.year)+'-'+str(todays_date.month)+'-'+str(todays_date.day)
-data = TvDatafeed().get_hist(symbol=symbol,exchange='NSE',interval=Interval.in_daily,n_bars=1)
-ltp= data.loc[tdate+' 09:15:00']['close']
-print(f"LTP for {pTrdSymbol}: {ltp}")
-sl = input("Enter stoploss Price: ")
-if tt == "b":
-    qty = str(int(float(stop_amount_per_trade)/(float(ltp)-float(sl))))
-elif tt == "s":
-    qty = str(int(float(stop_amount_per_trade)/(float(sl)-float(ltp))))
+def place_order(place_order_payload):
+    try:
+        place_order_response = requests.post(place_order_endpoint, headers=headers, data=place_order_payload)
+        
+#----------------   Set up headers  ------------------------------------------
 
-print(f"qty = {qty}")
-##################################################
+headers = {
+    'accept': 'application/json',
+    'Sid': os.getenv("session_id"),  # Session ID from .env
+    'Auth': os.getenv("session_token"),  # Session token from .env
+    'neo-fin-key': os.getenv("neotradeapi"),  # Use appropriate key
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Authorization': f"Bearer {os.getenv('app_access_token')}"  # Access token from .env
+    }
+
+#----------------   Set up Paylods  ------------------------------------------
 
 if int(qty) > 0:
 
@@ -119,18 +155,8 @@ if int(qty) > 0:
     place_order_payload = f"jData={requests.utils.quote(json.dumps(place_order_details))}"
     sl_order_payload = f"jData={requests.utils.quote(json.dumps(sl_order_details))}"
 
-    # Set up headers
-    place_order_headers = {
-        'accept': 'application/json',
-        'Sid': os.getenv("session_id"),  # Session ID from .env
-        'Auth': os.getenv("session_token"),  # Session token from .env
-        'neo-fin-key': 'neotradeapi',  # Use appropriate key
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': f"Bearer {os.getenv('app_access_token')}"  # Access token from .env
-    }
-
     # Make the POST request to place the order
-    place_order_response = requests.post(place_order_endpoint, headers=place_order_headers, data=place_order_payload)
+    place_order_response = requests.post(place_order_endpoint, headers=headers, data=place_order_payload)
 
     # Check if the request was successful
     if place_order_response.status_code == 200:
@@ -146,7 +172,7 @@ if int(qty) > 0:
             if place_order_status == "complete":
 
                 print(f"Order placed successfully! Order ID: {order_id} Status: {place_order_status}")
-                sl_order_response = requests.post(place_order_endpoint, headers=place_order_headers, data=sl_order_payload)
+                sl_order_response = requests.post(place_order_endpoint, headers=headers, data=sl_order_payload)
                 if sl_order_response.status_code == 200:
                     # Parse the JSON response
                     response_data = sl_order_response.json()
